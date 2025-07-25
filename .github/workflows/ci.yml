@@ -41,10 +41,13 @@ jobs:
 
       - name: Run Spring Boot application in background
         run: |
-          # Expone el endpoint de salud de Actuator sin seguridad
-          nohup ./gradlew bootRun -Dmanagement.endpoints.web.exposure.include=health > app.log 2>&1 &
+          # Permite el acceso público a /actuator/health y lo expone
+          nohup ./gradlew bootRun \
+            -Dmanagement.endpoints.web.exposure.include=health \
+            -Dmanagement.endpoint.health.probes.enabled=true \
+            -Dspring.security.filter.order=0 \
+            -Dmanagement.security.enabled=false > app.log 2>&1 &
           echo "Waiting for application to start..."
-          # Si el timeout falla, imprime el log de la app y sale con error
           if ! timeout 60s bash -c 'until curl -s --fail http://localhost:8080/actuator/health > /dev/null; do echo "Still waiting for health endpoint..."; sleep 5; done'; then
             echo "Application did not start in time. Printing logs:"
             cat app.log
