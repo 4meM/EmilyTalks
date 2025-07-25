@@ -43,13 +43,13 @@ jobs:
         run: |
           ./gradlew bootRun &
           echo "Waiting for application to start..."
-          timeout 60s bash -c 'until curl -s http://localhost:8080 > /dev/null; do echo "Still waiting..."; sleep 5; done'
+          timeout 60s bash -c 'until curl -s ${{ env.APP_URL }} > /dev/null; do echo "Still waiting..."; sleep 5; done'
           echo "Application started!"
 
       - name: ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.11.0
         with:
-          target: ${{ env.APP_URL }}
+          target: 'http://host.docker.internal:8080'
           cmd_options: '-r zap-report.html'
 
       - name: Upload ZAP Report
