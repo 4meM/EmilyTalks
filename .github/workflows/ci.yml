@@ -2,7 +2,7 @@ name: Java CI with Gradle & SonarCloud
 
 on:
   push:
-    branches: [ main, testing ]
+    branches: [ main , testing ]
   pull_request:
     branches: [ main ]
 
@@ -20,52 +20,19 @@ jobs:
       JWT_TOKEN: ${{ secrets.JWT_TOKEN }}
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-      APP_URL: 'http://localhost:8080'
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v3
         with:
           java-version: '21'
           distribution: 'temurin'
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
-
-      # --- Nuevos pasos para ZAP ---
-      - name: Build application
-        run: ./gradlew build -x test
-
-      - name: Run Spring Boot application in background
-        run: |
-          # Pasa una propiedad a Gradle para que configure bootRun y deshabilite la seguridad
-          nohup ./gradlew bootRun -PdisableSecurity > app.log 2>&1 &
-          echo "Waiting for application to start..."
-          if ! timeout 120s bash -c 'until curl -s --fail http://localhost:8080/actuator/health > /dev/null; do echo "Still waiting for health endpoint..."; sleep 5; done'; then
-          echo "Application did not start in time. Printing logs:"
-          cat app.log
-          echo "---"
-          echo "Checking endpoint with curl -v:"
-          curl -v http://localhost:8080/actuator/health
-          exit 1
-          fi
-          echo "Application started and health endpoint is up!"
-
-      - name: ZAP Baseline Scan
-        uses: zaproxy/action-baseline@v0.11.0
-        with:
-          target: ${{ env.APP_URL }}
-          cmd_options: '-r zap-report.html -D 10020 -D 10021'
-
-      - name: Upload ZAP Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: zap-security-report
-          path: zap-report.html
 
       - name: Build, test & coverage
         run: ./gradlew test jacocoTestReport
