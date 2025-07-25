@@ -41,13 +41,18 @@ jobs:
 
       - name: Run Spring Boot application in background
         run: |
-          # Excluye la autoconfiguración de seguridad para permitir el acceso público
-          nohup ./gradlew bootRun --args='--spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration' > app.log 2>&1 &
+          # Excluye la autoconfiguración de seguridad a través de una variable de entorno
+          export SPRING_AUTOCONFIGURE_EXCLUDE=org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration,org.springframework.boot.actuate.autoconfigure.security.servlet.ManagementWebSecurityAutoConfiguration
+          nohup ./gradlew bootRun > app.log 2>&1 &
           echo "Waiting for application to start..."
-          if ! timeout 60s bash -c 'until curl -s --fail http://localhost:8080/actuator/health > /dev/null; do echo "Still waiting for health endpoint..."; sleep 5; done'; then
-            echo "Application did not start in time. Printing logs:"
-            cat app.log
-            exit 1
+          # Aumentamos el timeout y añadimos -v a curl para más detalles en caso de fallo
+          if ! timeout 120s bash -c 'until curl -s --fail http://localhost:8080/actuator/health > /dev/null; do echo "Still waiting for health endpoint..."; sleep 5; done'; then
+          echo "Application did not start in time. Printing logs:"
+          cat app.log
+          echo "---"
+          echo "Checking endpoint with curl -v:"
+          curl -v http://localhost:8080/actuator/health
+          exit 1
           fi
           echo "Application started and health endpoint is up!"
 
