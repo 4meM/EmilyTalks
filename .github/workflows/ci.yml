@@ -42,7 +42,9 @@ jobs:
       - name: Run Spring Boot application in background
         run: |
           ./gradlew bootRun &
-          sleep 30
+          echo "Waiting for application to start..."
+          timeout 60s bash -c 'until curl -s http://localhost:8080 > /dev/null; do echo "Still waiting..."; sleep 5; done'
+          echo "Application started!"
 
       - name: ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.11.0
