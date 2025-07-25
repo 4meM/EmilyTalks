@@ -41,10 +41,10 @@ jobs:
 
       - name: Run Spring Boot application in background
         run: |
-          ./gradlew bootRun &
+          nohup ./gradlew bootRun > app.log 2>&1 &
           echo "Waiting for application to start..."
-          timeout 60s bash -c 'until curl -s ${{ env.APP_URL }} > /dev/null; do echo "Still waiting..."; sleep 5; done'
-          echo "Application started!"
+          timeout 60s bash -c 'until curl -s --fail http://localhost:8080/actuator/health > /dev/null; do echo "Still waiting for health endpoint..."; sleep 5; done'
+          echo "Application started and health endpoint is up!"
 
       - name: ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.11.0
